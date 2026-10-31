@@ -5,7 +5,7 @@ from openai import OpenAI
 # ---------------- PAGE CONFIG ----------------
 
 st.set_page_config(
-    page_title="Jawad AI Chatbot",
+    page_title="Jawad's AI Chatbot",
     page_icon="🤖",
     layout="centered"
 )
