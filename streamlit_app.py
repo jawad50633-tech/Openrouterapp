@@ -61,7 +61,7 @@ st.sidebar.caption("Powered by OpenRouter + Streamlit")
 # ---------------- MAIN CHAT ----------------
 
 st.title("🤖 Jawad AI Assistant")
-st.caption("Your personal AI chatbot powered by free OpenRouter models.")
+st.caption("Your personal AI chatbot created by jawad and powered by free OpenRouter models.")
 
 # Display previous messages
 
@@ -98,7 +98,7 @@ if prompt := st.chat_input("Ask me anything..."):
                         {
                             "role": "system",
                             "content": (
-                                "You are a helpful, friendly AI assistant. "
+                                "You are a helpful, friendly AI assistant. created by muhammad jawad "
                                 "Give clear and useful answers."
                             )
                         },
