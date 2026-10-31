@@ -304,7 +304,7 @@ if not st.session_state.messages:
 
     st.markdown("""
     <div class="welcome">
-        <div class="welcome-icon">✦</div>
+        <div class="welcome-icon">😇</div>
         <h1>What can I help you with?</h1>
         <p>Your ideas deserve intelligent answers. Let's get started.</p>
     </div>
