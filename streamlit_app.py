@@ -7,11 +7,32 @@ from openai import OpenAI
 # ==========================================
 
 st.set_page_config(
-    page_title="Jawad's AI assistant",
+    page_title="Jawads AI",
     page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# ==========================================
+# API CONFIGURATION
+# ==========================================
+
+try:
+    API_KEY = st.secrets["OPENROUTER_API_KEY"]
+except Exception:
+    st.error("OpenRouter API key not found. Please configure it in Streamlit Secrets.")
+    st.stop()
+
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=API_KEY,
+    default_headers={
+        "HTTP-Referer": "https://jawad-open.streamlit.app",
+        "X-Title": "Jawad AI"
+    }
+)
+
+MODEL = "openrouter/free"
 
 # ==========================================
 # SESSION STATE
@@ -21,194 +42,209 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 
 if "theme" not in st.session_state:
-    st.session_state.theme = "Light"
-
-if "model" not in st.session_state:
-    st.session_state.model = "openrouter/free"
+    st.session_state.theme = "Dark"
 
 # ==========================================
-# OPENROUTER CONNECTION
+# THEME COLORS
 # ==========================================
 
-try:
-    API_KEY = st.secrets["OPENROUTER_API_KEY"]
+dark_mode = st.session_state.theme == "Dark"
 
-    client = OpenAI(
-        base_url="https://openrouter.ai/api/v1",
-        api_key=API_KEY
-    )
-
-except Exception:
-    st.error("OpenRouter configuration is missing.")
-    st.stop()
-
-# ==========================================
-# CUSTOM STYLING
-# ==========================================
-
-dark = st.session_state.theme == "Dark"
-
-if dark:
-    bg = "#111318"
-    sidebar = "#191c24"
-    surface = "#202530"
-    text = "#f1f5f9"
-    muted = "#a0a9b8"
-    border = "#303746"
+if dark_mode:
+    BG = "#0e1117"
+    SIDEBAR = "#161b25"
+    CARD = "#1b2230"
+    TEXT = "#f5f7fb"
+    MUTED = "#a5afc0"
+    BORDER = "#30394a"
+    INPUT_BG = "#252d3b"
 else:
-    bg = "#f7f9fc"
-    sidebar = "#ffffff"
-    surface = "#ffffff"
-    text = "#172033"
-    muted = "#697586"
-    border = "#e5eaf1"
+    BG = "#f7f9fc"
+    SIDEBAR = "#ffffff"
+    CARD = "#ffffff"
+    TEXT = "#172033"
+    MUTED = "#667085"
+    BORDER = "#e2e8f0"
+    INPUT_BG = "#ffffff"
 
-st.markdown(f"""
-<style>
+# ==========================================
+# CUSTOM CSS
+# ==========================================
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+st.markdown(
+    f"""
+    <style>
 
-html, body, [class*="css"] {{
-    font-family: 'Inter', sans-serif;
-}}
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-.stApp {{
-    background: {bg};
-    color: {text};
-}}
+    html, body, [class*="css"] {{
+        font-family: 'Inter', sans-serif;
+    }}
 
-[data-testid="stSidebar"] {{
-    background: {sidebar};
-    border-right: 1px solid {border};
-}}
+    .stApp {{
+        background-color: {BG};
+        color: {TEXT};
+    }}
 
-[data-testid="stHeader"] {{
-    background: transparent;
-}}
+    [data-testid="stHeader"] {{
+        background-color: {BG};
+    }}
 
-.block-container {{
-    max-width: 1050px;
-    padding-top: 2rem;
-    padding-bottom: 7rem;
-}}
+    [data-testid="stSidebar"] {{
+        background-color: {SIDEBAR};
+        border-right: 1px solid {BORDER};
+    }}
 
-.brand {{
-    font-size: 27px;
-    font-weight: 800;
-    letter-spacing: -1px;
-    color: {text};
-}}
+    [data-testid="stSidebar"] * {{
+        color: {TEXT};
+    }}
 
-.brand span {{
-    color: #3978f6;
-}}
+    .brand {{
+        font-size: 27px;
+        font-weight: 800;
+        color: #3978ed;
+        letter-spacing: -1px;
+        margin-bottom: 2px;
+    }}
 
-.brand-sub {{
-    font-size: 12px;
-    color: {muted};
-    margin-top: 4px;
-}}
+    .brand-subtitle {{
+        font-size: 12px;
+        color: {MUTED};
+        margin-bottom: 25px;
+    }}
 
-.section-label {{
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 1.3px;
-    color: {muted};
-    margin: 22px 0 10px 0;
-}}
+    .main-heading {{
+        font-size: 36px;
+        font-weight: 800;
+        letter-spacing: -1.5px;
+        color: {TEXT};
+        text-align: center;
+        margin-top: 35px;
+        margin-bottom: 8px;
+    }}
 
-.welcome {{
-    text-align: center;
-    padding: 75px 15px 35px 15px;
-}}
+    .main-subtitle {{
+        color: {MUTED};
+        font-size: 15px;
+        text-align: center;
+        margin-bottom: 35px;
+    }}
 
-.welcome-icon {{
-    font-size: 45px;
-    margin-bottom: 15px;
-}}
+    .welcome-card {{
+        background: {CARD};
+        border: 1px solid {BORDER};
+        border-radius: 18px;
+        padding: 25px;
+        margin: 10px 0;
+    }}
 
-.welcome h1 {{
-    color: {text};
-    font-size: 38px;
-    font-weight: 800;
-    letter-spacing: -1.5px;
-}}
+    .welcome-card h3 {{
+        color: {TEXT};
+        font-size: 17px;
+        margin-bottom: 8px;
+    }}
 
-.welcome p {{
-    color: {muted};
-    font-size: 15px;
-}}
+    .welcome-card p {{
+        color: {MUTED};
+        font-size: 13px;
+        margin-bottom: 0;
+    }}
 
-.info-card {{
-    background: {surface};
-    border: 1px solid {border};
-    border-radius: 16px;
-    padding: 17px;
-    min-height: 105px;
-}}
+    .section-title {{
+        color: {TEXT};
+        font-size: 14px;
+        font-weight: 700;
+        margin-top: 25px;
+        margin-bottom: 10px;
+    }}
 
-.info-card b {{
-    color: {text};
-    font-size: 14px;
-}}
+    .status {{
+        display: inline-block;
+        background: rgba(34, 197, 94, 0.12);
+        color: #22c55e;
+        border-radius: 20px;
+        padding: 6px 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }}
 
-.info-card p {{
-    color: {muted};
-    font-size: 12px;
-    margin-top: 8px;
-}}
+    .footer {{
+        text-align: center;
+        color: {MUTED};
+        font-size: 11px;
+        padding: 25px 0 10px 0;
+    }}
 
-[data-testid="stChatMessage"] {{
-    background: {surface};
-    border: 1px solid {border};
-    border-radius: 15px;
-    padding: 15px;
-    margin-bottom: 15px;
-}}
+    /* Chat input styling */
 
-[data-testid="stChatInput"] {{
-    border-radius: 16px;
-}}
+    [data-testid="stChatInput"] {{
+        background-color: {BG} !important;
+    }}
 
-.stButton > button {{
-    border-radius: 11px;
-    border: 1px solid {border};
-    background: {surface};
-    color: {text};
-    font-weight: 500;
-    transition: 0.2s;
-}}
+    [data-testid="stChatInput"] > div {{
+        background-color: {INPUT_BG} !important;
+        border: 1px solid {BORDER} !important;
+        border-radius: 15px !important;
+    }}
 
-.stButton > button:hover {{
-    border-color: #3978f6;
-    color: #3978f6;
-}}
+    [data-testid="stChatInput"] textarea {{
+        color: {TEXT} !important;
+        -webkit-text-fill-color: {TEXT} !important;
+        caret-color: {TEXT} !important;
+        background-color: transparent !important;
+    }}
 
-hr {{
-    border-color: {border};
-}}
+    [data-testid="stChatInput"] textarea::placeholder {{
+        color: {MUTED} !important;
+        -webkit-text-fill-color: {MUTED} !important;
+        opacity: 1 !important;
+    }}
 
-.footer {{
-    text-align: center;
-    font-size: 11px;
-    color: {muted};
-    padding: 15px;
-}}
-/* Fix chat input visibility in dark mode */
-[data-testid="stChatInput"] textarea {
-    color: #ffffff !important;
-    -webkit-text-fill-color: #ffffff !important;
-    caret-color: #ffffff !important;
-}
+    [data-testid="stChatInput"] button {{
+        color: #3978ed !important;
+    }}
 
-[data-testid="stChatInput"] textarea::placeholder {
-    color: #b0b0b0 !important;
-    -webkit-text-fill-color: #b0b0b0 !important;
-    opacity: 1 !important;
-}
+    /* Chat message styling */
 
-</style>
-""", unsafe_allow_html=True)
+    [data-testid="stChatMessage"] {{
+        background-color: {CARD};
+        border: 1px solid {BORDER};
+        border-radius: 15px;
+        padding: 15px;
+        margin-bottom: 12px;
+    }}
+
+    [data-testid="stMarkdownContainer"] p {{
+        color: {TEXT};
+    }}
+
+    /* Buttons */
+
+    .stButton > button {{
+        border-radius: 10px;
+        border: 1px solid {BORDER};
+        background-color: {CARD};
+        color: {TEXT};
+        font-weight: 600;
+        transition: 0.2s ease;
+    }}
+
+    .stButton > button:hover {{
+        border-color: #3978ed;
+        color: #3978ed;
+    }}
+
+    /* Select boxes and radio controls */
+
+    [data-testid="stSelectbox"] > div,
+    [data-testid="stRadio"] {{
+        color: {TEXT};
+    }}
+
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 # ==========================================
 # SIDEBAR
@@ -217,66 +253,65 @@ hr {{
 with st.sidebar:
 
     st.markdown(
-        '<div class="brand">Jawad<span>AI.</span></div>',
+        """
+        <div class="brand">✦ Jawad AI</div>
+        <div class="brand-subtitle">Your personal AI assistant</div>
+        """,
         unsafe_allow_html=True
     )
 
-    st.markdown(
-        '<div class="brand-sub">Your intelligent AI companion</div>',
-        unsafe_allow_html=True
-    )
-
-    st.write("")
+    st.markdown("---")
 
     if st.button("＋  New Conversation", use_container_width=True):
         st.session_state.messages = []
         st.rerun()
 
-    st.markdown('<div class="section-label">AI MODEL</div>',
-                unsafe_allow_html=True)
+    st.markdown("### Appearance")
 
-    selected_model = st.selectbox(
-        "Select model",
-        options=[
-            "openrouter/free",
-        ],
-        format_func=lambda x: "Auto • Free Models"
-    )
-
-    st.session_state.model = selected_model
-
-    st.markdown('<div class="section-label">APPEARANCE</div>',
-                unsafe_allow_html=True)
-
-    theme = st.radio(
+    theme_choice = st.radio(
         "Choose theme",
-        ["Light", "Dark"],
-        index=0 if st.session_state.theme == "Light" else 1,
+        ["Dark", "Light"],
+        index=0 if dark_mode else 1,
         horizontal=True,
         label_visibility="collapsed"
     )
 
-    if theme != st.session_state.theme:
-        st.session_state.theme = theme
+    if theme_choice != st.session_state.theme:
+        st.session_state.theme = theme_choice
         st.rerun()
 
-    st.markdown('<div class="section-label">CONVERSATION</div>',
-                unsafe_allow_html=True)
+    st.markdown("---")
 
-    st.caption(f"{len(st.session_state.messages) // 2} exchanges")
+    st.markdown("### AI Model")
 
-    if st.button("Clear conversation", use_container_width=True):
+    st.selectbox(
+        "Selected model",
+        [MODEL],
+        index=0,
+        disabled=True,
+        label_visibility="collapsed"
+    )
+
+    st.caption("Powered by OpenRouter")
+
+    st.markdown("---")
+
+    st.markdown("### Conversation")
+
+    st.caption(f"{len(st.session_state.messages) // 2} messages exchanged")
+
+    if st.button("🗑️  Clear Conversation", use_container_width=True):
         st.session_state.messages = []
         st.rerun()
 
-    st.divider()
+    st.markdown("---")
 
     st.markdown(
-        f"""
-        <div style="font-size:13px;color:{muted};">
-        <b style="color:{text};">Jawad's AI assistant</b><br>
-        Powered by OpenRouter<br><br>
-        Personal AI Assistant
+        """
+        <div style="font-size:12px; color:#8993a5;">
+            <b>Jawads AI</b><br>
+            Built with Python and Streamlit.<br>
+            Powered by OpenRouter.
         </div>
         """,
         unsafe_allow_html=True
@@ -286,77 +321,117 @@ with st.sidebar:
 # MAIN HEADER
 # ==========================================
 
-col1, col2 = st.columns([3, 1])
-
-with col1:
-    st.markdown(
-        f"<h3 style='color:{text};margin-bottom:0;'>AI Assistant</h3>",
-        unsafe_allow_html=True
-    )
-    st.caption("Ask questions, explore ideas and get things done.")
-
-with col2:
-    st.markdown(
-        f"""
-        <div style="text-align:right;padding-top:8px;
-        color:#16a36a;font-size:12px;">
-        ● ONLINE
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-st.divider()
+st.markdown(
+    """
+    <div style="text-align:center; margin-top:10px;">
+        <span class="status">● Online</span>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 # ==========================================
 # WELCOME SCREEN
 # ==========================================
 
+suggested_prompt = None
+
 if not st.session_state.messages:
 
-    st.markdown("""
-    <div class="welcome">
-        <div class="welcome-icon">😇</div>
-        <h1>What can I help you with?</h1>
-        <p>Your ideas deserve intelligent answers. Let's get started.</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown('<div class="section-label">TRY ASKING</div>',
-                unsafe_allow_html=True)
+    st.markdown(
+        """
+        <div class="main-heading">How can I help you today?</div>
+        <div class="main-subtitle">
+            Ask anything. Explore ideas, solve problems, and build something great.
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
     col1, col2 = st.columns(2)
 
-    prompt = None
-
     with col1:
-        if st.button(
-            "💡  Explain a concept\n\nLearn something new",
-            use_container_width=True
-        ):
-            prompt = "Explain artificial intelligence in simple words."
+        st.markdown(
+            """
+            <div class="welcome-card">
+                <h3>💻 Programming</h3>
+                <p>Learn Python, debug code, and develop applications.</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
         if st.button(
-            "💻  Write Python code\n\nBuild something useful",
+            "Teach me Python from beginner to advanced",
             use_container_width=True
         ):
-            prompt = "Write a Python program to demonstrate an API."
+            suggested_prompt = "Teach me Python from beginner to advanced."
 
     with col2:
-        if st.button(
-            "✍️  Improve my writing\n\nMake it professional",
-            use_container_width=True
-        ):
-            prompt = "Help me write a professional email."
+        st.markdown(
+            """
+            <div class="welcome-card">
+                <h3>🤖 Artificial Intelligence</h3>
+                <p>Explore AI concepts, tools, models, and projects.</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
         if st.button(
-            "🚀  Brainstorm ideas\n\nExplore new possibilities",
+            "Explain how AI agents work",
             use_container_width=True
         ):
-            prompt = "Give me five creative technology project ideas."
+            suggested_prompt = "Explain how AI agents work."
+
+    col3, col4 = st.columns(2)
+
+    with col3:
+        st.markdown(
+            """
+            <div class="welcome-card">
+                <h3>🔐 Cyber Security</h3>
+                <p>Understand security concepts and best practices.</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        if st.button(
+            "Give me a cyber security learning roadmap",
+            use_container_width=True
+        ):
+            suggested_prompt = "Give me a cyber security learning roadmap."
+
+    with col4:
+        st.markdown(
+            """
+            <div class="welcome-card">
+                <h3>💡 Ideas & Creativity</h3>
+                <p>Brainstorm ideas and turn your plans into reality.</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        if st.button(
+            "Give me an innovative project idea",
+            use_container_width=True
+        ):
+            suggested_prompt = "Give me an innovative project idea."
 
 else:
-    prompt = None
+
+    st.markdown(
+        """
+        <div style="text-align:center; padding:15px 0;">
+            <span style="font-size:25px; font-weight:800; color:#3978ed;">
+                ✦ Jawad AI
+            </span>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 # ==========================================
 # DISPLAY CHAT HISTORY
@@ -364,75 +439,110 @@ else:
 
 for message in st.session_state.messages:
 
-    with st.chat_message(
-        message["role"],
-        avatar="👤" if message["role"] == "user" else "✦"
-    ):
-        st.markdown(message["content"])
+    if message["role"] == "user":
+        with st.chat_message("user", avatar="👤"):
+            st.markdown(message["content"])
+
+    else:
+        with st.chat_message("assistant", avatar="🤖"):
+            st.markdown(message["content"])
 
 # ==========================================
 # CHAT INPUT
 # ==========================================
 
-user_input = st.chat_input("Message Jawad AI...")
+user_input = st.chat_input(
+    "Message Jawads AI...",
+    key="jawad_chat_input"
+)
+
+# Use a suggested prompt if a suggestion button was clicked
+if suggested_prompt:
+    user_input = suggested_prompt
+
+# ==========================================
+# GENERATE AI RESPONSE
+# ==========================================
 
 if user_input:
-    prompt = user_input
 
-# ==========================================
-# GENERATE RESPONSE
-# ==========================================
-
-if prompt:
-
-    st.session_state.messages.append({
-        "role": "user",
-        "content": prompt
-    })
+    # Save user message
+    st.session_state.messages.append(
+        {
+            "role": "user",
+            "content": user_input
+        }
+    )
 
     with st.chat_message("user", avatar="👤"):
-        st.markdown(prompt)
+        st.markdown(user_input)
 
-    with st.chat_message("assistant"):
+    with st.chat_message("assistant", avatar="🤖"):
 
-        try:
-            with st.spinner("Thinking..."):
+        response_placeholder = st.empty()
 
+        with st.spinner("Jawad AI is thinking..."):
+
+            try:
                 response = client.chat.completions.create(
-                    model=st.session_state.model,
+                    model=MODEL,
                     messages=[
                         {
                             "role": "system",
                             "content": (
-                                "You are Jasper AI created by M. Jawad, a professional, "
-                                "friendly and intelligent assistant. "
-                                "Provide accurate, clear and helpful answers. "
-                                "Use Markdown and code formatting when useful."
+                                "You are Jawad AI, a helpful, intelligent, "
+                                "professional AI assistant. Give clear, accurate, "
+                                "friendly and well-structured answers. "
+                                "When explaining technical topics, use "
+                                "beginner-friendly step-by-step instructions."
                             )
-                        },
-                        *st.session_state.messages
-                    ],
-                    temperature=0.7
+                        }
+                    ] + st.session_state.messages,
+                    temperature=0.7,
+                    max_tokens=2000
                 )
 
-                answer = response.choices[0].message.content
+                assistant_reply = response.choices[0].message.content
 
-                if not answer:
-                    answer = "I couldn't generate a response. Please try again."
+                if not assistant_reply:
+                    assistant_reply = "I couldn't generate a response. Please try again."
 
-                st.markdown(answer)
+                response_placeholder.markdown(assistant_reply)
 
-                st.caption(f"Model: {response.model}")
+                st.session_state.messages.append(
+                    {
+                        "role": "assistant",
+                        "content": assistant_reply
+                    }
+                )
 
-                st.session_state.messages.append({
-                    "role": "assistant",
-                    "content": answer
-                })
+            except Exception as e:
 
-        except Exception as e:
-            st.error(f"Something went wrong: {str(e)}")
+                error_message = (
+                    "Sorry, something went wrong while connecting to the AI service. "
+                    "Please try again."
+                )
+
+                response_placeholder.error(error_message)
+
+                # Remove the failed user message so it is not repeatedly sent
+                if (
+                    st.session_state.messages
+                    and st.session_state.messages[-1]["role"] == "user"
+                ):
+                    st.session_state.messages.pop()
+
+                st.caption(f"Technical details: {str(e)}")
+
+# ==========================================
+# FOOTER
+# ==========================================
 
 st.markdown(
-    '<div class="footer">Jawads AI - Built with Python, Streamlit & OpenRouter</div>',
+    """
+    <div class="footer">
+        Jawad AI - Built with Python, Streamlit & OpenRouter
+    </div>
+    """,
     unsafe_allow_html=True
 )
