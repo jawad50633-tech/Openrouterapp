@@ -421,6 +421,6 @@ if prompt:
             st.error(f"Something went wrong: {str(e)}")
 
 st.markdown(
-    '<div class="footer">Jawad's AI · Built with Python, Streamlit & OpenRouter</div>',
+    '<div class="footer">Jawad's AI - Built with Python, Streamlit & OpenRouter</div>',
     unsafe_allow_html=True
 )
