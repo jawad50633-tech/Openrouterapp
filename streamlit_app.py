@@ -381,7 +381,7 @@ if prompt:
     with st.chat_message("user", avatar="👤"):
         st.markdown(prompt)
 
-    with st.chat_message("assistant", avatar="✦"):
+    with st.chat_message("assistant"):
 
         try:
             with st.spinner("Thinking..."):
