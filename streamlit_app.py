@@ -194,6 +194,18 @@ hr {{
     color: {muted};
     padding: 15px;
 }}
+/* Fix chat input visibility in dark mode */
+[data-testid="stChatInput"] textarea {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    caret-color: #ffffff !important;
+}
+
+[data-testid="stChatInput"] textarea::placeholder {
+    color: #b0b0b0 !important;
+    -webkit-text-fill-color: #b0b0b0 !important;
+    opacity: 1 !important;
+}
 
 </style>
 """, unsafe_allow_html=True)
