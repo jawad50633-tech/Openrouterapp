@@ -1,6 +1,10 @@
 
 import streamlit as st
 from openai import OpenAI
+from memory.memory_manager import (
+    extract_memories,
+    get_memory_context
+)
 
 from memory.database import (
     init_db,
