@@ -122,60 +122,239 @@ else:
 # ==========================================
 
 st.markdown(
+
     f"""
+
     <style>
+
+    /* Main application */
+
     .stApp {{
-        background-color: {background};
+
+        background: {background};
+
         color: {text_color};
+
     }}
 
+    [data-testid="stMainBlockContainer"] {{
+
+        max-width: 1050px;
+
+        padding: 2rem 1.5rem 6rem 1.5rem;
+
+    }}
+
+    /* Sidebar */
+
     [data-testid="stSidebar"] {{
-        background-color: {sidebar_background};
+
+        background: {sidebar_background};
+
+        border-right: 1px solid {border_color};
+
     }}
 
     [data-testid="stSidebar"] * {{
+
         color: {text_color};
+
     }}
 
+    /* Headings */
+
     .main-title {{
-        font-size: 34px;
+
+        font-size: 32px;
+
         font-weight: 800;
+
         color: {text_color};
+
+        letter-spacing: -1px;
+
         margin-bottom: 0;
+
     }}
 
     .subtitle {{
+
         color: {secondary_color};
-        font-size: 14px;
+
+        font-size: 15px;
+
         margin-top: 5px;
+
     }}
 
-    .welcome-box {{
-        padding: 25px;
+    /* Chat messages */
+
+    [data-testid="stChatMessage"] {{
+
+        background: {card_background} !important;
+
         border: 1px solid {border_color};
-        border-radius: 15px;
-        background-color: {input_background};
-        margin-top: 20px;
+
+        border-radius: 16px;
+
+        padding: 16px;
+
+        margin-bottom: 14px;
+
     }}
 
-    .stChatMessage {{
-        border-radius: 12px;
+    [data-testid="stChatMessage"] p,
+
+    [data-testid="stChatMessage"] li,
+
+    [data-testid="stChatMessage"] span {{
+
+        color: {text_color} !important;
+
+        line-height: 1.7;
+
     }}
 
-    .footer {{
-        text-align: center;
-        color: {secondary_color};
-        font-size: 12px;
-        padding: 20px;
-    }}
+    /* Chat input area */
 
     [data-testid="stChatInput"] {{
-        background-color: {input_background};
+
+        background: {input_background} !important;
+
+        border: 1px solid {border_color} !important;
+
+        border-radius: 18px !important;
+
+        box-shadow: 0 4px 18px rgba(0,0,0,0.12);
+
+    }}
+
+    [data-testid="stChatInput"] textarea {{
+
+        color: {text_color} !important;
+
+        background: transparent !important;
+
+        caret-color: {text_color};
+
+    }}
+
+    [data-testid="stChatInput"] textarea::placeholder {{
+
+        color: {secondary_color} !important;
+
+    }}
+
+    [data-testid="stBottom"] {{
+
+        background: {background} !important;
+
+    }}
+
+    /* Buttons */
+
+    .stButton > button {{
+
+        border-radius: 12px;
+
+        min-height: 42px;
+
+        border: 1px solid {border_color};
+
+        font-weight: 600;
+
+        transition: all 0.2s ease;
+
+    }}
+
+    .stButton > button:hover {{
+
+        border-color: #3B82F6;
+
+        color: #3B82F6;
+
+    }}
+
+    /* Welcome card */
+
+    .welcome-box {{
+
+        padding: 24px;
+
+        border: 1px solid {border_color};
+
+        border-radius: 18px;
+
+        background: {card_background};
+
+        margin: 20px 0;
+
+    }}
+
+    .welcome-box h2 {{
+
+        color: {text_color};
+
+    }}
+
+    .welcome-box p {{
+
+        color: {secondary_color};
+
+        line-height: 1.7;
+
+    }}
+
+    /* Mobile optimization */
+
+    @media (max-width: 768px) {{
+
+        [data-testid="stMainBlockContainer"] {{
+
+            padding: 1.2rem 0.8rem 5rem 0.8rem;
+
+        }}
+
+        .main-title {{
+
+            font-size: 26px;
+
+        }}
+
+        .subtitle {{
+
+            font-size: 13px;
+
+        }}
+
+        [data-testid="stChatMessage"] {{
+
+            padding: 12px;
+
+            border-radius: 14px;
+
+        }}
+
+        .welcome-box {{
+
+            padding: 18px;
+
+        }}
+
+        .stButton > button {{
+
+            font-size: 13px;
+
+        }}
+
     }}
 
     </style>
+
     """,
+
     unsafe_allow_html=True,
+
 )
 
 
