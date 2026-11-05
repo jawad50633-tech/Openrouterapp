@@ -101,20 +101,27 @@ elif st.session_state.active_conversation_id is None:
 # THEME CONFIGURATION
 # ==========================================
 
+# ==========================================
+# THEME CONFIGURATION
+# ==========================================
+
 if st.session_state.theme == "Dark":
-    background = "#0E1117"
-    sidebar_background = "#161B22"
-    text_color = "#F0F2F6"
-    secondary_color = "#A0A7B4"
-    input_background = "#202631"
-    border_color = "#303744"
+    background = "#0B1020"
+    sidebar_background = "#111827"
+    text_color = "#F8FAFC"
+    secondary_color = "#A7B1C2"
+    card_background = "#151F32"
+    border_color = "#273449"
+    input_background = "#151F32"
+
 else:
-    background = "#FFFFFF"
-    sidebar_background = "#F5F7FA"
-    text_color = "#1F2937"
+    background = "#F8FAFC"
+    sidebar_background = "#FFFFFF"
+    text_color = "#172033"
     secondary_color = "#64748B"
+    card_background = "#FFFFFF"
+    border_color = "#E2E8F0"
     input_background = "#FFFFFF"
-    border_color = "#DCE2EA"
 
 
 # ==========================================
