@@ -2,6 +2,16 @@
 import streamlit as st
 from openai import OpenAI
 
+from memory.database import (
+    init_db,
+    create_conversation,
+    get_conversations,
+    delete_conversation,
+    save_message,
+    get_messages,
+    delete_last_message
+)
+
 # ==========================================
 # PAGE CONFIGURATION
 # ==========================================
@@ -14,13 +24,19 @@ st.set_page_config(
 )
 
 # ==========================================
+# DATABASE INITIALIZATION
+# ==========================================
+
+init_db()
+
+# ==========================================
 # API CONFIGURATION
 # ==========================================
 
 try:
     API_KEY = st.secrets["OPENROUTER_API_KEY"]
 except Exception:
-    st.error("OpenRouter API key not found. Please configure it in Streamlit Secrets.")
+    st.error("OpenRouter API key not found. Configure it in Streamlit Secrets.")
     st.stop()
 
 client = OpenAI(
@@ -34,15 +50,52 @@ client = OpenAI(
 
 MODEL = "openrouter/free"
 
+SYSTEM_PROMPT = """
+You are Jawad AI, a helpful, intelligent and professional AI assistant.
+
+Give clear, accurate, friendly and well-structured answers.
+
+When explaining technical topics, use beginner-friendly,
+step-by-step instructions.
+
+Be honest when you are uncertain.
+"""
+
 # ==========================================
 # SESSION STATE
 # ==========================================
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-
 if "theme" not in st.session_state:
     st.session_state.theme = "Dark"
+
+if "conversation_id" not in st.session_state:
+
+    conversations = get_conversations()
+
+    if conversations:
+        st.session_state.conversation_id = conversations[0]["id"]
+    else:
+        st.session_state.conversation_id = create_conversation()
+
+if "messages" not in st.session_state:
+    st.session_state.messages = get_messages(
+        st.session_state.conversation_id
+    )
+
+# ==========================================
+# CONVERSATION SWITCHING
+# ==========================================
+
+def switch_conversation(conversation_id):
+
+    st.session_state.conversation_id = conversation_id
+
+    st.session_state.messages = get_messages(
+        conversation_id
+    )
+
+    st.rerun()
+
 
 # ==========================================
 # THEME COLORS
@@ -58,6 +111,7 @@ if dark_mode:
     MUTED = "#a5afc0"
     BORDER = "#30394a"
     INPUT_BG = "#252d3b"
+
 else:
     BG = "#f7f9fc"
     SIDEBAR = "#ffffff"
@@ -150,17 +204,9 @@ st.markdown(
         margin-bottom: 0;
     }}
 
-    .section-title {{
-        color: {TEXT};
-        font-size: 14px;
-        font-weight: 700;
-        margin-top: 25px;
-        margin-bottom: 10px;
-    }}
-
     .status {{
         display: inline-block;
-        background: rgba(34, 197, 94, 0.12);
+        background: rgba(34,197,94,0.12);
         color: #22c55e;
         border-radius: 20px;
         padding: 6px 12px;
@@ -174,8 +220,6 @@ st.markdown(
         font-size: 11px;
         padding: 25px 0 10px 0;
     }}
-
-    /* Chat input styling */
 
     [data-testid="stChatInput"] {{
         background-color: {BG} !important;
@@ -196,15 +240,8 @@ st.markdown(
 
     [data-testid="stChatInput"] textarea::placeholder {{
         color: {MUTED} !important;
-        -webkit-text-fill-color: {MUTED} !important;
         opacity: 1 !important;
     }}
-
-    [data-testid="stChatInput"] button {{
-        color: #3978ed !important;
-    }}
-
-    /* Chat message styling */
 
     [data-testid="stChatMessage"] {{
         background-color: {CARD};
@@ -218,8 +255,6 @@ st.markdown(
         color: {TEXT};
     }}
 
-    /* Buttons */
-
     .stButton > button {{
         border-radius: 10px;
         border: 1px solid {BORDER};
@@ -232,13 +267,6 @@ st.markdown(
     .stButton > button:hover {{
         border-color: #3978ed;
         color: #3978ed;
-    }}
-
-    /* Select boxes and radio controls */
-
-    [data-testid="stSelectbox"] > div,
-    [data-testid="stRadio"] {{
-        color: {TEXT};
     }}
 
     </style>
@@ -262,9 +290,18 @@ with st.sidebar:
 
     st.markdown("---")
 
-    if st.button("＋  New Conversation", use_container_width=True):
+    # NEW CONVERSATION
+
+    if st.button("＋ New Conversation", use_container_width=True):
+
+        new_id = create_conversation()
+
+        st.session_state.conversation_id = new_id
         st.session_state.messages = []
+
         st.rerun()
+
+    # APPEARANCE
 
     st.markdown("### Appearance")
 
@@ -282,6 +319,8 @@ with st.sidebar:
 
     st.markdown("---")
 
+    # AI MODEL
+
     st.markdown("### AI Model")
 
     st.selectbox(
@@ -296,12 +335,52 @@ with st.sidebar:
 
     st.markdown("---")
 
-    st.markdown("### Conversation")
+    # CONVERSATION HISTORY
 
-    st.caption(f"{len(st.session_state.messages) // 2} messages exchanged")
+    st.markdown("### Conversation History")
 
-    if st.button("🗑️  Clear Conversation", use_container_width=True):
+    conversations = get_conversations()
+
+    if conversations:
+
+        for conversation in conversations:
+
+            conversation_id = conversation["id"]
+
+            title = conversation["title"] or "New Conversation"
+
+            if len(title) > 24:
+                title = title[:24] + "..."
+
+            if conversation_id == st.session_state.conversation_id:
+                title = "● " + title
+
+            if st.button(
+                title,
+                key=f"conversation_{conversation_id}",
+                use_container_width=True
+            ):
+                switch_conversation(conversation_id)
+
+    st.caption(
+        f"{len(st.session_state.messages) // 2} messages in current conversation"
+    )
+
+    # CLEAR CONVERSATION
+
+    st.markdown("---")
+
+    if st.button("🗑️ Clear Conversation", use_container_width=True):
+
+        delete_conversation(
+            st.session_state.conversation_id
+        )
+
+        new_id = create_conversation()
+
+        st.session_state.conversation_id = new_id
         st.session_state.messages = []
+
         st.rerun()
 
     st.markdown("---")
@@ -309,7 +388,7 @@ with st.sidebar:
     st.markdown(
         """
         <div style="font-size:12px; color:#8993a5;">
-            <b>Jawads AI</b><br>
+            <b>Jawad AI</b><br>
             Built with Python and Streamlit.<br>
             Powered by OpenRouter.
         </div>
@@ -340,9 +419,13 @@ if not st.session_state.messages:
 
     st.markdown(
         """
-        <div class="main-heading">How can I help you today?</div>
+        <div class="main-heading">
+            How can I help you today?
+        </div>
+
         <div class="main-subtitle">
-            Ask anything. Explore ideas, solve problems, and build something great.
+            Ask anything. Explore ideas, solve problems,
+            and build something great.
         </div>
         """,
         unsafe_allow_html=True
@@ -351,6 +434,7 @@ if not st.session_state.messages:
     col1, col2 = st.columns(2)
 
     with col1:
+
         st.markdown(
             """
             <div class="welcome-card">
@@ -368,6 +452,7 @@ if not st.session_state.messages:
             suggested_prompt = "Teach me Python from beginner to advanced."
 
     with col2:
+
         st.markdown(
             """
             <div class="welcome-card">
@@ -387,6 +472,7 @@ if not st.session_state.messages:
     col3, col4 = st.columns(2)
 
     with col3:
+
         st.markdown(
             """
             <div class="welcome-card">
@@ -404,6 +490,7 @@ if not st.session_state.messages:
             suggested_prompt = "Give me a cyber security learning roadmap."
 
     with col4:
+
         st.markdown(
             """
             <div class="welcome-card">
@@ -440,10 +527,12 @@ else:
 for message in st.session_state.messages:
 
     if message["role"] == "user":
+
         with st.chat_message("user", avatar="👤"):
             st.markdown(message["content"])
 
     else:
+
         with st.chat_message("assistant", avatar="🤖"):
             st.markdown(message["content"])
 
@@ -456,7 +545,6 @@ user_input = st.chat_input(
     key="jawad_chat_input"
 )
 
-# Use a suggested prompt if a suggestion button was clicked
 if suggested_prompt:
     user_input = suggested_prompt
 
@@ -466,13 +554,29 @@ if suggested_prompt:
 
 if user_input:
 
-    # Save user message
-    st.session_state.messages.append(
-        {
-            "role": "user",
-            "content": user_input
-        }
+    # SAVE USER MESSAGE
+
+    st.session_state.messages.append({
+        "role": "user",
+        "content": user_input
+    })
+
+    save_message(
+        st.session_state.conversation_id,
+        "user",
+        user_input
     )
+
+    # SET CONVERSATION TITLE
+
+    if len(st.session_state.messages) == 1:
+
+        from memory.database import update_conversation_title
+
+        update_conversation_title(
+            st.session_state.conversation_id,
+            user_input[:50]
+        )
 
     with st.chat_message("user", avatar="👤"):
         st.markdown(user_input)
@@ -484,53 +588,66 @@ if user_input:
         with st.spinner("Jawad AI is thinking..."):
 
             try:
+
                 response = client.chat.completions.create(
                     model=MODEL,
                     messages=[
                         {
                             "role": "system",
-                            "content": (
-                                "You are Jawad AI, a helpful, intelligent, "
-                                "professional AI assistant. Give clear, accurate, "
-                                "friendly and well-structured answers. "
-                                "When explaining technical topics, use "
-                                "beginner-friendly step-by-step instructions."
-                            )
+                            "content": SYSTEM_PROMPT
                         }
                     ] + st.session_state.messages,
                     temperature=0.7,
                     max_tokens=2000
                 )
 
-                assistant_reply = response.choices[0].message.content
+                assistant_reply = (
+                    response.choices[0].message.content
+                )
 
                 if not assistant_reply:
-                    assistant_reply = "I couldn't generate a response. Please try again."
+                    assistant_reply = (
+                        "I couldn't generate a response. Please try again."
+                    )
 
-                response_placeholder.markdown(assistant_reply)
+                response_placeholder.markdown(
+                    assistant_reply
+                )
 
-                st.session_state.messages.append(
-                    {
-                        "role": "assistant",
-                        "content": assistant_reply
-                    }
+                # SAVE ASSISTANT RESPONSE
+
+                st.session_state.messages.append({
+                    "role": "assistant",
+                    "content": assistant_reply
+                })
+
+                save_message(
+                    st.session_state.conversation_id,
+                    "assistant",
+                    assistant_reply
                 )
 
             except Exception as e:
 
                 error_message = (
-                    "Sorry, something went wrong while connecting to the AI service. "
-                    "Please try again."
+                    "Sorry, something went wrong while connecting "
+                    "to the AI service. Please try again."
                 )
 
                 response_placeholder.error(error_message)
 
-                # Remove the failed user message so it is not repeatedly sent
+                # ROLLBACK FAILED USER MESSAGE
+
                 if (
                     st.session_state.messages
                     and st.session_state.messages[-1]["role"] == "user"
                 ):
                     st.session_state.messages.pop()
+
+                delete_last_message(
+                    st.session_state.conversation_id,
+                    "user"
+                )
 
                 st.caption(f"Technical details: {str(e)}")
 
