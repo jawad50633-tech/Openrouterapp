@@ -20,11 +20,11 @@ from memory.memory_manager import (
 
 
 # ==========================================
-# PAGE CONFIGURATION
+# 1. PAGE CONFIGURATION
 # ==========================================
 
 st.set_page_config(
-    page_title="Jawads AI",
+    page_title="Jawad AI",
     page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -32,14 +32,14 @@ st.set_page_config(
 
 
 # ==========================================
-# DATABASE INITIALIZATION
+# 2. DATABASE INITIALIZATION
 # ==========================================
 
 init_db()
 
 
 # ==========================================
-# API CONFIGURATION
+# 3. OPENROUTER CONFIGURATION
 # ==========================================
 
 try:
@@ -63,7 +63,7 @@ else:
 
 
 # ==========================================
-# SESSION STATE
+# 4. SESSION STATE
 # ==========================================
 
 if "theme" not in st.session_state:
@@ -75,37 +75,40 @@ if "active_conversation_id" not in st.session_state:
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-if "conversation_selector" not in st.session_state:
-    st.session_state.conversation_selector = None
+if "pending_prompt" not in st.session_state:
+    st.session_state.pending_prompt = None
 
 
 # ==========================================
-# CONVERSATION INITIALIZATION
+# 5. NEW SESSION CONVERSATION
 # ==========================================
 
 conversations = get_conversations()
 
-if not conversations:
-    new_id = create_conversation()
+conversation_ids = [
+    conversation["id"]
+    for conversation in conversations
+]
+
+active_id = st.session_state.active_conversation_id
+
+# Create a fresh conversation when a new
+# Streamlit session starts.
+
+if active_id is None or active_id not in conversation_ids:
+
+    new_id = create_conversation("New Conversation")
+
     st.session_state.active_conversation_id = new_id
     st.session_state.messages = []
 
-elif st.session_state.active_conversation_id is None:
-    latest_id = conversations[0]["id"]
-
-    st.session_state.active_conversation_id = latest_id
-    st.session_state.messages = get_messages(latest_id)
-
 
 # ==========================================
-# THEME CONFIGURATION
-# ==========================================
-
-# ==========================================
-# THEME CONFIGURATION
+# 6. THEME CONFIGURATION
 # ==========================================
 
 if st.session_state.theme == "Dark":
+
     background = "#0B1020"
     sidebar_background = "#111827"
     text_color = "#F8FAFC"
@@ -115,6 +118,7 @@ if st.session_state.theme == "Dark":
     input_background = "#151F32"
 
 else:
+
     background = "#F8FAFC"
     sidebar_background = "#FFFFFF"
     text_color = "#172033"
@@ -125,248 +129,155 @@ else:
 
 
 # ==========================================
-# CUSTOM CSS
+# 7. CUSTOM CSS
 # ==========================================
 
 st.markdown(
-
     f"""
-
     <style>
 
-    /* Main application */
-
     .stApp {{
-
         background: {background};
-
         color: {text_color};
-
     }}
 
     [data-testid="stMainBlockContainer"] {{
-
         max-width: 1050px;
-
         padding: 2rem 1.5rem 6rem 1.5rem;
-
     }}
 
-    /* Sidebar */
-
     [data-testid="stSidebar"] {{
-
         background: {sidebar_background};
-
         border-right: 1px solid {border_color};
-
     }}
 
     [data-testid="stSidebar"] * {{
-
         color: {text_color};
-
     }}
 
-    /* Headings */
-
     .main-title {{
-
         font-size: 32px;
-
         font-weight: 800;
-
         color: {text_color};
-
         letter-spacing: -1px;
-
         margin-bottom: 0;
-
     }}
 
     .subtitle {{
-
         color: {secondary_color};
-
         font-size: 15px;
-
         margin-top: 5px;
-
     }}
 
-    /* Chat messages */
-
     [data-testid="stChatMessage"] {{
-
         background: {card_background} !important;
-
         border: 1px solid {border_color};
-
         border-radius: 16px;
-
         padding: 16px;
-
         margin-bottom: 14px;
-
     }}
 
     [data-testid="stChatMessage"] p,
-
     [data-testid="stChatMessage"] li,
-
     [data-testid="stChatMessage"] span {{
-
         color: {text_color} !important;
-
         line-height: 1.7;
-
     }}
 
-    /* Chat input area */
-
     [data-testid="stChatInput"] {{
-
         background: {input_background} !important;
-
         border: 1px solid {border_color} !important;
-
         border-radius: 18px !important;
-
         box-shadow: 0 4px 18px rgba(0,0,0,0.12);
-
     }}
 
     [data-testid="stChatInput"] textarea {{
-
         color: {text_color} !important;
-
         background: transparent !important;
-
         caret-color: {text_color};
-
     }}
 
     [data-testid="stChatInput"] textarea::placeholder {{
-
         color: {secondary_color} !important;
-
     }}
 
     [data-testid="stBottom"] {{
-
         background: {background} !important;
-
     }}
 
-    /* Buttons */
-
     .stButton > button {{
-
         border-radius: 12px;
-
         min-height: 42px;
-
         border: 1px solid {border_color};
-
         font-weight: 600;
-
         transition: all 0.2s ease;
-
     }}
 
     .stButton > button:hover {{
-
         border-color: #3B82F6;
-
         color: #3B82F6;
-
     }}
 
-    /* Welcome card */
-
     .welcome-box {{
-
         padding: 24px;
-
         border: 1px solid {border_color};
-
         border-radius: 18px;
-
         background: {card_background};
-
         margin: 20px 0;
-
     }}
 
     .welcome-box h2 {{
-
         color: {text_color};
-
     }}
 
     .welcome-box p {{
-
         color: {secondary_color};
-
         line-height: 1.7;
-
     }}
 
-    /* Mobile optimization */
+    .footer {{
+        text-align: center;
+        color: {secondary_color};
+        font-size: 12px;
+        padding: 25px;
+    }}
 
     @media (max-width: 768px) {{
 
         [data-testid="stMainBlockContainer"] {{
-
             padding: 1.2rem 0.8rem 5rem 0.8rem;
-
         }}
 
         .main-title {{
-
             font-size: 26px;
-
         }}
 
         .subtitle {{
-
             font-size: 13px;
-
         }}
 
         [data-testid="stChatMessage"] {{
-
             padding: 12px;
-
             border-radius: 14px;
-
         }}
 
         .welcome-box {{
-
             padding: 18px;
-
         }}
 
         .stButton > button {{
-
             font-size: 13px;
-
         }}
-
     }}
 
     </style>
-
     """,
-
     unsafe_allow_html=True,
-
 )
 
 
 # ==========================================
-# SIDEBAR
+# 8. SIDEBAR
 # ==========================================
 
 with st.sidebar:
@@ -377,19 +288,25 @@ with st.sidebar:
 
     st.divider()
 
-    # New conversation
-    if st.button("➕ New Conversation", use_container_width=True):
+    # NEW CONVERSATION
+
+    if st.button(
+        "➕ New Conversation",
+        use_container_width=True,
+    ):
 
         new_id = create_conversation("New Conversation")
 
         st.session_state.active_conversation_id = new_id
         st.session_state.messages = []
+        st.session_state.pending_prompt = None
 
         st.rerun()
 
     st.divider()
 
-    # Theme selector
+    # APPEARANCE
+
     st.markdown("### Appearance")
 
     selected_theme = st.radio(
@@ -401,12 +318,15 @@ with st.sidebar:
     )
 
     if selected_theme != st.session_state.theme:
+
         st.session_state.theme = selected_theme
+
         st.rerun()
 
     st.divider()
 
-    # Conversation history
+    # CONVERSATION HISTORY
+
     st.markdown("### 💬 Conversations")
 
     conversations = get_conversations()
@@ -417,11 +337,6 @@ with st.sidebar:
     ]
 
     current_id = st.session_state.active_conversation_id
-
-    if current_id not in conversation_ids and conversation_ids:
-        current_id = conversation_ids[0]
-        st.session_state.active_conversation_id = current_id
-        st.session_state.messages = get_messages(current_id)
 
     if conversations:
 
@@ -442,29 +357,47 @@ with st.sidebar:
                 "New Conversation",
             ),
             label_visibility="collapsed",
-            key="conversation_selector",
+            key=f"conversation_selector_{current_id}",
         )
 
         if selected_id != st.session_state.active_conversation_id:
+
             st.session_state.active_conversation_id = selected_id
+
             st.session_state.messages = get_messages(selected_id)
+
+            st.session_state.pending_prompt = None
+
             st.rerun()
 
+    else:
+
+        st.caption("No conversations yet.")
+
     st.divider()
 
-    # Chat statistics
+    # STATISTICS
+
     st.markdown("### 📊 Statistics")
 
-    total_messages = len(st.session_state.messages)
+    st.metric(
+        "Messages",
+        len(st.session_state.messages),
+    )
 
-    st.metric("Messages", total_messages)
-
-    st.metric("Conversations", len(conversations))
+    st.metric(
+        "Conversations",
+        len(conversations),
+    )
 
     st.divider()
 
-    # Clear current conversation
-    if st.button("🗑️ Clear Current Conversation", use_container_width=True):
+    # DELETE CURRENT CONVERSATION
+
+    if st.button(
+        "🗑️ Clear Current Conversation",
+        use_container_width=True,
+    ):
 
         old_id = st.session_state.active_conversation_id
 
@@ -475,6 +408,7 @@ with st.sidebar:
 
         st.session_state.active_conversation_id = new_id
         st.session_state.messages = []
+        st.session_state.pending_prompt = None
 
         st.rerun()
 
@@ -486,7 +420,7 @@ with st.sidebar:
 
 
 # ==========================================
-# MAIN HEADER
+# 9. MAIN HEADER
 # ==========================================
 
 st.markdown(
@@ -503,7 +437,7 @@ st.divider()
 
 
 # ==========================================
-# SUGGESTED PROMPTS
+# 10. SUGGESTED PROMPTS
 # ==========================================
 
 suggested_prompts = [
@@ -515,7 +449,7 @@ suggested_prompts = [
 
 
 # ==========================================
-# WELCOME SCREEN
+# 11. WELCOME SCREEN
 # ==========================================
 
 if not st.session_state.messages:
@@ -547,12 +481,14 @@ if not st.session_state.messages:
                 key=f"suggestion_{index}",
                 use_container_width=True,
             ):
+
                 st.session_state.pending_prompt = prompt
+
                 st.rerun()
 
 
 # ==========================================
-# DISPLAY CHAT HISTORY
+# 12. DISPLAY CHAT HISTORY
 # ==========================================
 
 for message in st.session_state.messages:
@@ -570,32 +506,40 @@ for message in st.session_state.messages:
 
 
 # ==========================================
-# CHAT INPUT
+# 13. CHAT INPUT
 # ==========================================
 
 user_input = st.chat_input("Message Jawad AI...")
 
-if not user_input and "pending_prompt" in st.session_state:
-    user_input = st.session_state.pop("pending_prompt")
+# Process suggested prompt if selected
+
+if not user_input and st.session_state.pending_prompt:
+
+    user_input = st.session_state.pending_prompt
+
+    st.session_state.pending_prompt = None
 
 
 # ==========================================
-# PROCESS USER MESSAGE
+# 14. PROCESS USER MESSAGE
 # ==========================================
 
 if user_input:
 
     if not client:
+
         st.error(
             "OpenRouter API key not found. "
             "Please configure OPENROUTER_API_KEY "
             "in .streamlit/secrets.toml."
         )
+
         st.stop()
 
     conversation_id = st.session_state.active_conversation_id
 
-    # Save user message
+    # SAVE USER MESSAGE
+
     save_message(
         conversation_id,
         "user",
@@ -607,7 +551,8 @@ if user_input:
         "content": user_input,
     })
 
-    # Set conversation title from first message
+    # GENERATE CONVERSATION TITLE
+
     existing_messages = get_messages(conversation_id)
 
     if len(existing_messages) == 1:
@@ -622,12 +567,14 @@ if user_input:
             title,
         )
 
-    # Display user message
+    # DISPLAY USER MESSAGE
+
     with st.chat_message("user"):
+
         st.markdown(user_input)
 
     # ======================================
-    # RETRIEVE RELEVANT MEMORIES
+    # 15. RETRIEVE RELEVANT MEMORIES
     # ======================================
 
     memory_context = get_memory_context(
@@ -640,6 +587,7 @@ if user_input:
     personal AI assistant.
 
     Your responsibilities:
+
     - Answer questions accurately and clearly.
     - Help with programming, AI, DevOps and cybersecurity.
     - Explain technical topics step by step.
@@ -653,9 +601,11 @@ if user_input:
     """
 
     if memory_context:
+
         system_prompt += "\n\n" + memory_context
 
-    # Build complete conversation context
+    # BUILD COMPLETE CONVERSATION CONTEXT
+
     api_messages = [
         {
             "role": "system",
@@ -673,7 +623,7 @@ if user_input:
             })
 
     # ======================================
-    # GENERATE ASSISTANT RESPONSE
+    # 16. GENERATE ASSISTANT RESPONSE
     # ======================================
 
     try:
@@ -694,13 +644,15 @@ if user_input:
                 ).strip()
 
                 if not assistant_reply:
+
                     raise ValueError(
                         "The model returned an empty response."
                     )
 
             st.markdown(assistant_reply)
 
-        # Save assistant response to SQLite
+        # SAVE ASSISTANT RESPONSE
+
         save_message(
             conversation_id,
             "assistant",
@@ -712,9 +664,31 @@ if user_input:
             "content": assistant_reply,
         })
 
-        # ==================================
-        # AUTOMATIC MEMORY EXTRACTION
-        # ==================================
+    except Exception as error:
+
+        # ROLL BACK FAILED USER MESSAGE
+
+        delete_last_message(
+            conversation_id,
+            "user",
+        )
+
+        if (
+            st.session_state.messages
+            and st.session_state.messages[-1]["role"] == "user"
+        ):
+
+            st.session_state.messages.pop()
+
+        st.error(f"Something went wrong: {error}")
+
+        st.stop()
+
+    # ======================================
+    # 17. AUTOMATIC MEMORY EXTRACTION
+    # ======================================
+
+    try:
 
         with st.spinner("Updating memory..."):
 
@@ -726,30 +700,20 @@ if user_input:
             )
 
         if saved_memories:
+
             print("New memories saved:", saved_memories)
 
-        # Refresh sidebar and conversation history
-        st.rerun()
+    except Exception as memory_error:
 
-    except Exception as error:
+        print("Memory extraction error:", memory_error)
 
-        # Roll back failed user message
-        delete_last_message(
-            conversation_id,
-            "user",
-        )
+    # REFRESH APPLICATION
 
-        if (
-            st.session_state.messages
-            and st.session_state.messages[-1]["role"] == "user"
-        ):
-            st.session_state.messages.pop()
-
-        st.error(f"Something went wrong: {error}")
+    st.rerun()
 
 
 # ==========================================
-# FOOTER
+# 18. FOOTER
 # ==========================================
 
 st.markdown(
@@ -762,4 +726,3 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
- 
