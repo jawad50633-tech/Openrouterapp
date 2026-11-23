@@ -78,9 +78,12 @@ if "messages" not in st.session_state:
 if "pending_prompt" not in st.session_state:
     st.session_state.pending_prompt = None
 
+if "last_model" not in st.session_state:
+    st.session_state.last_model = MODEL
+
 
 # ==========================================
-# 5. NEW SESSION CONVERSATION
+# 5. FRESH CONVERSATION INITIALIZATION
 # ==========================================
 
 conversations = get_conversations()
@@ -92,15 +95,13 @@ conversation_ids = [
 
 active_id = st.session_state.active_conversation_id
 
-# Create a fresh conversation when a new
-# Streamlit session starts.
-
 if active_id is None or active_id not in conversation_ids:
 
     new_id = create_conversation("New Conversation")
 
     st.session_state.active_conversation_id = new_id
     st.session_state.messages = []
+    st.session_state.last_model = MODEL
 
 
 # ==========================================
@@ -268,6 +269,7 @@ st.markdown(
         .stButton > button {{
             font-size: 13px;
         }}
+
     }}
 
     </style>
@@ -283,7 +285,6 @@ st.markdown(
 with st.sidebar:
 
     st.markdown("## 🤖 Jawad AI")
-
     st.caption("Your Personal AI Assistant")
 
     st.divider()
@@ -300,6 +301,7 @@ with st.sidebar:
         st.session_state.active_conversation_id = new_id
         st.session_state.messages = []
         st.session_state.pending_prompt = None
+        st.session_state.last_model = MODEL
 
         st.rerun()
 
@@ -307,7 +309,7 @@ with st.sidebar:
 
     # APPEARANCE
 
-    st.markdown("### Appearance")
+    st.markdown("### 🎨 Appearance")
 
     selected_theme = st.radio(
         "Choose theme",
@@ -320,8 +322,23 @@ with st.sidebar:
     if selected_theme != st.session_state.theme:
 
         st.session_state.theme = selected_theme
-
         st.rerun()
+
+    st.divider()
+
+    # AI MODEL INFORMATION
+
+    st.markdown("### 🧠 AI Model")
+
+    st.info(
+        f"Active Router: {MODEL}"
+    )
+
+    st.caption(
+        f"Last responding model: {st.session_state.last_model}"
+    )
+
+    st.caption("Provider: OpenRouter")
 
     st.divider()
 
@@ -368,6 +385,8 @@ with st.sidebar:
 
             st.session_state.pending_prompt = None
 
+            st.session_state.last_model = MODEL
+
             st.rerun()
 
     else:
@@ -392,7 +411,7 @@ with st.sidebar:
 
     st.divider()
 
-    # DELETE CURRENT CONVERSATION
+    # CLEAR CURRENT CONVERSATION
 
     if st.button(
         "🗑️ Clear Current Conversation",
@@ -409,12 +428,11 @@ with st.sidebar:
         st.session_state.active_conversation_id = new_id
         st.session_state.messages = []
         st.session_state.pending_prompt = None
+        st.session_state.last_model = MODEL
 
         st.rerun()
 
     st.divider()
-
-    st.caption(f"Model: {MODEL}")
 
     st.caption("Powered by OpenRouter")
 
@@ -431,6 +449,11 @@ st.markdown(
 st.markdown(
     '<p class="subtitle">Your Personal AI Assistant</p>',
     unsafe_allow_html=True,
+)
+
+st.caption(
+    f"🧠 Active Router: {MODEL} | "
+    f"Last Model: {st.session_state.last_model}"
 )
 
 st.divider()
@@ -483,7 +506,6 @@ if not st.session_state.messages:
             ):
 
                 st.session_state.pending_prompt = prompt
-
                 st.rerun()
 
 
@@ -494,7 +516,6 @@ if not st.session_state.messages:
 for message in st.session_state.messages:
 
     role = message["role"]
-
     content = message["content"]
 
     if role not in ("user", "assistant"):
@@ -504,6 +525,13 @@ for message in st.session_state.messages:
 
         st.markdown(content)
 
+        # Display actual model for assistant messages
+        if role == "assistant" and message.get("model"):
+
+            st.caption(
+                f"🧠 Model: {message['model']}"
+            )
+
 
 # ==========================================
 # 13. CHAT INPUT
@@ -511,12 +539,9 @@ for message in st.session_state.messages:
 
 user_input = st.chat_input("Message Jawad AI...")
 
-# Process suggested prompt if selected
-
 if not user_input and st.session_state.pending_prompt:
 
     user_input = st.session_state.pending_prompt
-
     st.session_state.pending_prompt = None
 
 
@@ -570,7 +595,6 @@ if user_input:
     # DISPLAY USER MESSAGE
 
     with st.chat_message("user"):
-
         st.markdown(user_input)
 
     # ======================================
@@ -601,10 +625,9 @@ if user_input:
     """
 
     if memory_context:
-
         system_prompt += "\n\n" + memory_context
 
-    # BUILD COMPLETE CONVERSATION CONTEXT
+    # BUILD CONVERSATION CONTEXT
 
     api_messages = [
         {
@@ -623,7 +646,7 @@ if user_input:
             })
 
     # ======================================
-    # 16. GENERATE ASSISTANT RESPONSE
+    # 16. GENERATE AI RESPONSE
     # ======================================
 
     try:
@@ -649,7 +672,22 @@ if user_input:
                         "The model returned an empty response."
                     )
 
+                # GET ACTUAL MODEL NAME
+                actual_model = getattr(
+                    response,
+                    "model",
+                    None,
+                ) or MODEL
+
             st.markdown(assistant_reply)
+
+            st.caption(
+                f"🧠 Model: {actual_model}"
+            )
+
+        # UPDATE MODEL INFORMATION
+
+        st.session_state.last_model = actual_model
 
         # SAVE ASSISTANT RESPONSE
 
@@ -662,11 +700,12 @@ if user_input:
         st.session_state.messages.append({
             "role": "assistant",
             "content": assistant_reply,
+            "model": actual_model,
         })
 
     except Exception as error:
 
-        # ROLL BACK FAILED USER MESSAGE
+        # ROLLBACK FAILED USER MESSAGE
 
         delete_last_message(
             conversation_id,
@@ -700,12 +739,14 @@ if user_input:
             )
 
         if saved_memories:
-
             print("New memories saved:", saved_memories)
 
     except Exception as memory_error:
 
-        print("Memory extraction error:", memory_error)
+        print(
+            "Memory extraction error:",
+            memory_error,
+        )
 
     # REFRESH APPLICATION
 
